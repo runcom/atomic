@@ -5,7 +5,7 @@ from docker.errors import NotFound
 from operator import itemgetter
 
 class Verify(Atomic):
-    DEBUG = False
+    DEBUG = True
 
     def verify(self):
         """
@@ -70,7 +70,8 @@ class Verify(Atomic):
                     remote = True
                 else:
                     local_nvr = self.get_local_latest_version(name)
-                    latest_version = self.get_latest_remote_version(_match['Tag'])
+                    util.writeOut(_match['Tag'])
+                    latest_version = self.get_remote_latest_version(_match['Tag'])
 
                 no_version = (latest_version == "")
 
@@ -96,12 +97,12 @@ class Verify(Atomic):
                                 latest_version = layer['Version']
                         else:
                             # Do a remote inspect of images
-                            latest_version = self.get_latest_remote_version(tag)
+                            latest_version = self.get_remote_latest_version(tag)
                         remote = True
                     else:
                         tag = "Unknown"
                         try:
-                            latest_version = self.get_latest_remote_version(name)
+                            latest_version = self.get_remote_latest_version(name)
                         except NotFound:
                             latest_version = "Unknown"
                 else:
@@ -124,7 +125,7 @@ class Verify(Atomic):
 
     def is_repo_from_local_registry(self, input_repo):
         """
-        Determine is a given repo comes from a local-only registry
+        Determine if a given repo comes from a local-only registry
         :param input_repo: str repository name
         :return: bool
         """
@@ -139,6 +140,8 @@ class Verify(Atomic):
         for repo_ in similar:
             (reg, repo, tag) = util._decompose(repo_)
             results.append(self.is_registry_local(reg))
+        # if self.DEBUG
+            # util.output_json(results)
         return False if not all(results) else True
 
     def is_registry_local(self, registry):
@@ -250,7 +253,7 @@ class Verify(Atomic):
                 continue
         return "Version unavailable"
 
-    def get_latest_remote_version(self, tag):
+    def get_remote_latest_version(self, tag):
         r_inspect = self.d.remote_inspect(tag)
         if 'Labels' in r_inspect['Config'] \
                 and r_inspect['Config']['Labels'] is not None:

@@ -26,6 +26,8 @@ from .Export import export_docker
 from .Import import import_docker
 from docker.utils import kwargs_from_env
 
+from distutils.spawn import find_executable
+
 IMAGES = []
 
 def convert_size(size):
@@ -92,6 +94,7 @@ class Atomic(object):
 
     def __init__(self):
         self.d = AtomicDocker(**kwargs_from_env())
+        self.skopeo = Skopeo(**kwargs_from_env())
         self.name = None
         self.image = None
         self.spc = False
@@ -650,6 +653,7 @@ class Atomic(object):
                 # Shut up pylint in case we're on a machine with upstream
                 # docker-py, which lacks the remote keyword arg.
                 #pylint: disable=unexpected-keyword-arg
+                util.writeOut(self.args.image)
                 inspection = self.d.remote_inspect(self.args.image)
             except docker.errors.APIError:
                 # image does not exist on any configured registry
@@ -1010,12 +1014,26 @@ def SetFunc(function):
             setattr(namespace, self.dest, function)
     return customAction
 
+class Skopeo(object):
+    DEBUG = True
+    '''
+    '''
+    def __init__(self):
+        if not find_executable("skopeo"):
+            raise ValueError("unable to find 'skopeo'")
+    '''
+    '''
+    def inspect(self, image):
+        cmd = "skopeo {0}".format(image)
+        if self.DEBUG:
+            util.writeOut(cmd)
+        return []
 
 class AtomicDocker(docker.Client):
-    """
+    '''
     A class based on the docker client class with custom APIs specifically for
     atomic
-    """
+    '''
     def remote_inspect(self, image_id):
         return self._result(self._get(self._url("/images/{0}/json?remote=1".
                                                 format(image_id))), True)
